@@ -1,9 +1,15 @@
 # app/view/overview.R
 
 box:: use(
-  shiny[NS, moduleServer, tagList, icon],
+  shiny[NS, moduleServer, tagList, icon, htmlOutput],
   bslib[card, card_header, card_body, layout_columns, value_box],
-  reactable[reactable, renderReactable, reactableOutput]
+  reactable[reactable, renderReactable, reactableOutput, colDef],
+  googleVis[renderGvis, gvisCalendar],
+  dplyr[arrange, desc]
+)
+
+box:: use(
+  app/view/CalendarPlot
 )
 
 #' Overview page (UI)
@@ -44,15 +50,15 @@ ui <- function(id, total_groceries, latest_grocery, value_lg){
       reactableOutput(ns("groc_table"))
     ),
     card(
-      card_header("Grocery frequency")
-      # Add googleVis plot
+      card_header("Grocery frequency"),
+      CalendarPlot$ui(ns("calendarPlot"))
     )
 
   )
   )
 }
 
-#' Athletes page (server)
+#' Overview page (server)
 #'
 #' @param id id
 #' @param groc_data groceries overview data
@@ -60,15 +66,32 @@ ui <- function(id, total_groceries, latest_grocery, value_lg){
 #' @export
 #'
 
-server <- function(id, groc_data){
+server <- function(id, groc_data, calendar_data ){
   moduleServer(id, function(input, output, session){
 
 
-# output ------------------------------------------------------------------
+  # modules -----------------------------------------------------------------
+    CalendarPlot$server(id = "calendarPlot",
+                        data = calendar_data,
+                        coldate = "grocery_day",
+                        colvalue = "value_grocery")
 
-       output$groc_table <- renderReactable({
-         groc_data |>
-           reactable()
-       })
+  # output ------------------------------------------------------------------
+
+     output$groc_table <- renderReactable({
+       groc_data |>
+         arrange(desc(grocery_day)) |>
+         reactable(defaultPageSize = 10,
+                   defaultColDef = colDef(
+                     align = "center",
+                     headerStyle = list(background = "#f7f7f8")
+                   ),
+                   columns = list(
+                   grocery_day = colDef(name = "Grocery date"),
+                   supermarket_name = colDef(name = "Supermarket"),
+                   value_grocery = colDef(name = "Value (€)"))
+                   )
+                                        })
+
   })
 }
