@@ -9,7 +9,8 @@ box::use(
   app/view/overview,
   app/logic/importing_data,
   app/logic/constant[grocery_app_theme],
-  app/view/analytics
+  app/view/grocery_page,
+  app/view/product_page
 )
 
 #' @export
@@ -30,10 +31,11 @@ ui <- function(id) {
                 ),
       nav_panel("Groceries Analytics",
                 icon = icon("chart-line"),
-                analytics$ui(ns("analytics_page")
-
-                             )
-                )
+                grocery_page$ui(ns("analytics_page"))
+                ),
+      nav_panel("Product Analytics",
+                icon = icon("carrot"),
+                product_page$ui(ns("product_page")))
 
   )
 }
@@ -49,7 +51,8 @@ server <- function(id) {
                     groc_data = importing_data$grocery_by_day_super,
                     calendar_data = importing_data$grocery_by_day
                     )
-    analytics$server(id = "analytics_page")
+    grocery_page$server(id = "analytics_page")
+    product_page$server(id = "product_page")
 
   })
 }
