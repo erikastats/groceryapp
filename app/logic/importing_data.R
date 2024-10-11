@@ -2,21 +2,23 @@
 
 box::use(
   dplyr[filter, summarise, mutate, group_by,
-        pull, distinct, arrange],
+        pull, distinct, arrange, left_join, select],
   tidyr[replace_na],
   lubridate[day, year, month]
 )
+
+#' @export
+#' Raw product table
+product_table <- readRDS("app/data/product_table.rds")
 
 #' @export
 #'  Raw grocery table
 grocery_table <-  readRDS("app/data/grocery_table.rds") |>
   mutate(product_discount = product_discount |>
                             replace_na(0) ) |>
-  mutate(value_total = product_quantity*(product_value - product_discount))
-
-#' @export
-#' Raw product table
-product_table <- readRDS("app/data/product_table.rds")
+  mutate(value_total = product_quantity*(product_value - product_discount)) |>
+  left_join(product_table[, -c(5,6)]) |>
+  select(!(last_update_grocery:g_id))
 
 #' @export
 #' Table with grocery grouped by day and supermarket
@@ -66,4 +68,8 @@ filters_choices <- list(
 )
 
 #' @export
-#' Value of the average total amount spent on all groceries
+#' Table with count of products
+products_grocery <- grocery_table |>
+  group_by(product_name, product_category, product_subcategory,
+           supermarket_name)  |>
+  summarise(product_quantity)
